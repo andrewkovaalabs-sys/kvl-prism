@@ -13,6 +13,10 @@ async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
       (m) => (m.default ?? m) as ServerEntry,
+      (err) => {
+        serverEntryPromise = undefined;
+        throw err;
+      },
     );
   }
   return serverEntryPromise;
@@ -25,7 +29,14 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
 
-  const body = await response.clone().text();
+  let body: string;
+  try {
+    body = await response.clone().text();
+  } catch (readErr) {
+    console.error("Failed to read 500 response body for error inspection:", readErr);
+    return response;
+  }
+
   if (!body.includes('"unhandled":true') || !body.includes('"message":"HTTPError"')) {
     return response;
   }

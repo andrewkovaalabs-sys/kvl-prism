@@ -19,18 +19,27 @@ declare global {
 }
 
 export function reportLovableError(error: unknown, context: Record<string, unknown> = {}) {
-  if (typeof window === "undefined") return;
-  window.__lovableEvents?.captureException?.(
-    error,
-    {
-      source: "react_error_boundary",
-      route: window.location.pathname,
-      ...context,
-    },
-    {
-      mechanism: "react_error_boundary",
-      handled: false,
-      severity: "error",
-    },
-  );
+  if (typeof window === "undefined") {
+    console.error("[SSR error]", error);
+    return;
+  }
+
+  const captureException = window.__lovableEvents?.captureException;
+  if (captureException) {
+    captureException(
+      error,
+      {
+        source: "react_error_boundary",
+        route: window.location.pathname,
+        ...context,
+      },
+      {
+        mechanism: "react_error_boundary",
+        handled: false,
+        severity: "error",
+      },
+    );
+  } else {
+    console.error("[Unreported error — Lovable events not loaded]", error, context);
+  }
 }

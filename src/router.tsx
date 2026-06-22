@@ -3,7 +3,18 @@ import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
 export const getRouter = () => {
-  const queryClient = new QueryClient();
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        throwOnError: false,
+      },
+      mutations: {
+        onError: (error) => {
+          console.error("[mutation error]", error);
+        },
+      },
+    },
+  });
 
   const router = createRouter({
     routeTree,
